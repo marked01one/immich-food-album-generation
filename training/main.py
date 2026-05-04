@@ -9,17 +9,20 @@ from cnn import ResNet, Bottleneck
 
 from dataset import FoodDataset, GRAYSCALE_IMAGE_DIR
 
-SOURCE_IMAGE_DIR = ".data/images"
+SOURCE_IMAGE_DIR = ".data/rgb_224/"
 
 CATEGORY_LABELS = [
     "not_food",
     "italian_food",
     "japanese_food",
+    "fast_food",
     "meat",
     "seafood",
     "soup",
     "salad",
-    "dessert"
+    "dessert",
+    "rice",
+    "eggs",
 ]
 
 def main():
@@ -41,24 +44,27 @@ def generate_grayscale():
             cv2.imwrite(os.path.join(grayscale_dir, filename), img_resized)
 
 
+def print_log(message):
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}")
+
 def train():
 
     dataset = FoodDataset(CATEGORY_LABELS)
-    dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    net = ResNet(Bottleneck, [2, 2, 2, 2], num_classes=len(CATEGORY_LABELS), num_channels=1)
+    restnet50 = ResNet(Bottleneck, [3,4,6,3], num_classes=len(CATEGORY_LABELS), num_channels=3)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(restnet50.parameters(), lr=0.001, momentum=0.9)
 
-    print("-------------------------------")
-    print("Dataset loaded. Statistics:")
-    print(f"Number of samples: {len(dataset)}")
-    print(f"Number of categories: {len(CATEGORY_LABELS)}")
-    print(f"Samples for each category: {[
+    print_log("-------------------------------")
+    print_log("Dataset loaded. Statistics:")
+    print_log(f"Number of samples: {len(dataset)}")
+    print_log(f"Number of categories: {len(CATEGORY_LABELS)}")
+    print_log(f"Samples for each category: {[
         f"\n  * {category}: {len(os.listdir(os.path.join(GRAYSCALE_IMAGE_DIR, category)))}" 
         for category in CATEGORY_LABELS
     ]}")
-    print("-------------------------------")
+    print_log("-------------------------------")
 
     for epoch in range(20):
         start = time.time()
@@ -66,18 +72,18 @@ def train():
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data
             optimizer.zero_grad()
-            outputs = net(inputs)
+            outputs = restnet50(inputs)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
             running_loss += loss.item()
-        print(f"[Epoch {epoch + 1}] loss: {running_loss / len(dataloader):.3f} - Time: {time.time() - start:.2f} seconds")
+        print_log(f"COMPLETED EPOCH {epoch + 1:02d} (loss = {running_loss / len(dataloader):.3f})")
 
         if epoch % 5 == 4:
-            print("------------------------------")
-            print(f"Saving model at epoch {epoch + 1}...")
-            torch.save(net.state_dict(), f"resnet_food_classifier_epoch_{epoch + 1:02d}.pth")
+            print_log("------------------------------")
+            print_log(f"Saving model at epoch {epoch + 1}...")
+            torch.save(restnet50.state_dict(), f"resnet_food_classifier_big_epoch_{epoch + 1:02d}.pth")
             print("Model saved.")
             print("------------------------------")
 

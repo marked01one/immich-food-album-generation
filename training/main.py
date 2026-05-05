@@ -10,6 +10,7 @@ from cnn import ResNet, Bottleneck
 from dataset import FoodDataset, GRAYSCALE_IMAGE_DIR
 
 SOURCE_IMAGE_DIR = ".data/rgb_224/"
+RGB_IMAGE_DIR = ".data/rgb_224/"
 
 CATEGORY_LABELS = [
     "not_food",
@@ -26,7 +27,7 @@ CATEGORY_LABELS = [
 ]
 
 def main():
-    generate_grayscale()
+    train()
 
 def generate_grayscale():
     for img_dir in CATEGORY_LABELS:
@@ -60,14 +61,13 @@ def train():
     print_log("Dataset loaded. Statistics:")
     print_log(f"Number of samples: {len(dataset)}")
     print_log(f"Number of categories: {len(CATEGORY_LABELS)}")
-    print_log(f"Samples for each category: {[
-        f"\n  * {category}: {len(os.listdir(os.path.join(GRAYSCALE_IMAGE_DIR, category)))}" 
+    print_log("Samples for each category:" + "".join([
+        f"\n  * {category}: {len(os.listdir(os.path.join(RGB_IMAGE_DIR, category)))}" 
         for category in CATEGORY_LABELS
-    ]}")
+    ]))
     print_log("-------------------------------")
 
     for epoch in range(20):
-        start = time.time()
         running_loss = 0.0
         for i, data in enumerate(dataloader, 0):
             inputs, labels = data

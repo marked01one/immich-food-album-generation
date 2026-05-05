@@ -84,8 +84,8 @@ def train():
             print_log("------------------------------")
             print_log(f"Saving model at epoch {epoch + 1}...")
             torch.save(restnet50.state_dict(), f"resnet_food_classifier_big_epoch_{epoch + 1:02d}.pth")
-            print("Model saved.")
-            print("------------------------------")
+            print_log("Model saved.")
+            print_log("------------------------------")
 
 
 if __name__ == "__main__":

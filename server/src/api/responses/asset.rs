@@ -1,6 +1,7 @@
-use crate::utils::date_format;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+use crate::utils::date_format;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub enum AssetType {
@@ -17,6 +18,13 @@ pub enum AssetVisibility {
     timeline,
     hidden,
     locked,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[allow(non_camel_case_types)]
+pub enum AssetOrder {
+    asc,
+    desc,
 }
 
 // Follow the response schema: https://api.immich.app/endpoints/assets/getAssetInfo

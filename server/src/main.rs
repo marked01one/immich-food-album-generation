@@ -1,28 +1,45 @@
 mod api;
+mod shared;
 mod utils;
 
 use dotenvy::dotenv;
 
-use api::responses::asset::AssetResponse;
+use api::responses::asset::{AssetResponse, AssetType};
+use shared::pipeline::get_assets_from_album;
+use std::collections::{HashMap, HashSet};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
-    let mut immich_get_url = "http://hydrogen:2283/api/assets/".to_string();
 
-    let api_key = std::env::var("IMMICH_API_KEY").expect("IMMICH_API_KEY must be set");
-    let image_uuid = "3c452695-7fd0-4b0a-9d50-d419c27150f0".to_string();
+    let album_id = "8d7beebc-5fbf-4418-b5a0-6ac9bc51d630";
+    let album_id_private = "7b67ff8b-f28b-4c29-8f4f-899c67639f19";
+    let response_bind = get_assets_from_album(album_id).await?;
+    let response_private_bind = get_assets_from_album(album_id_private).await?;
 
-    immich_get_url.push_str(image_uuid.as_str());
-    immich_get_url.push_str(format!("?apiKey={api_key}").as_str());
+    let mut response_map = response_bind
+        .into_iter()
+        .filter(|a| a.type_ == AssetType::IMAGE)
+        .map(|a| (a.id.clone(), a))
+        .collect::<HashMap<String, AssetResponse>>();
 
-    let resp = reqwest::get(immich_get_url)
-        .await?
-        .json::<Option<AssetResponse>>()
-        .await?
-        .expect("Failed to get asset info!");
+    let private_assets = response_private_bind
+        .into_iter()
+        .filter(|a| a.type_ == AssetType::IMAGE)
+        .map(|a| a.id)
+        .collect::<HashSet<String>>();
 
-    println!("{resp:#?}");
+    let album_size_pre_filter = response_map.len() as i64;
+
+    for pa in private_assets {
+        response_map.remove(&pa);
+    }
+
+    let album_size_post_filter = response_map.len() as i64;
+
+    println!("--------------------------------");
+    println!("Images ingested:\t{album_size_pre_filter}");
+    println!("Images to process:\t{album_size_post_filter}");
 
     Ok(())
 }

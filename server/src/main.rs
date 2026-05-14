@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let preds = model.predict_from_file(&asset.originalPath).expect(
                 &format!("Failed to process asset with path: {}", asset.originalPath).to_string(),
             );
-            let preds_vec = Vec::<f64>::try_from(&preds).expect(
+            let preds_vec = Vec::<f64>::try_from(&preds.get(0)).expect(
                 &format!(
                     "Failed to convert tensor of dimensions {:?} to vector of type 'Vec<f64'!",
                     preds.size()

@@ -72,3 +72,12 @@ pub struct AssetResponse {
     pub visibility: AssetVisibility,
     pub width: Option<i64>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct BulkIdResponse {
+    pub id: String,
+    pub success: bool,
+    pub error: Option<String>,
+    pub errorMessage: Option<String>,
+}

@@ -8,7 +8,12 @@ use api::responses::asset::{AssetResponse, AssetType};
 use shared::pipeline::get_assets_from_album;
 use std::collections::{HashMap, HashSet};
 
-use crate::shared::model::Model;
+use crate::shared::{model::Model, pipeline::push_assets_to_album};
+
+const SOURCE_ALBUM_ID: &str = "8d7beebc-5fbf-4418-b5a0-6ac9bc51d630";
+const SOURCE_ALBUM_ID_PRIVATE: &str = "7b67ff8b-f28b-4c29-8f4f-899c67639f19";
+
+const DESTINATION_ALBUM_ID: &str = "66ee6684-7c29-4e5f-a82f-13eaaf4d3a40";
 
 const THRESHOLD: f64 = 0.5;
 const LABELS: &[&str] = &[
@@ -29,10 +34,8 @@ const LABELS: &[&str] = &[
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
-    let album_id = "8d7beebc-5fbf-4418-b5a0-6ac9bc51d630";
-    let album_id_private = "7b67ff8b-f28b-4c29-8f4f-899c67639f19";
-    let response_bind = get_assets_from_album(album_id).await?;
-    let response_private_bind = get_assets_from_album(album_id_private).await?;
+    let response_bind = get_assets_from_album(SOURCE_ALBUM_ID).await?;
+    let response_private_bind = get_assets_from_album(SOURCE_ALBUM_ID_PRIVATE).await?;
 
     let mut response_map = response_bind
         .into_iter()
@@ -81,6 +84,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .map(|(_, asset)| asset.id.clone())
         .collect::<Vec<String>>();
+
+    let push_response = push_assets_to_album(food_images_uuids, DESTINATION_ALBUM_ID).await?;
+
+    println!("Added {} assets to album!", push_response.len());
 
     Ok(())
 }

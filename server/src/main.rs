@@ -8,6 +8,23 @@ use api::responses::asset::{AssetResponse, AssetType};
 use shared::pipeline::get_assets_from_album;
 use std::collections::{HashMap, HashSet};
 
+use crate::shared::model::Model;
+
+const THRESHOLD: f64 = 0.5;
+const LABELS: &[&str] = &[
+    "not_food",
+    "italian_food",
+    "japanese_food",
+    "fast_food",
+    "meat",
+    "seafood",
+    "soup",
+    "salad",
+    "dessert",
+    "rice",
+    "eggs",
+];
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
@@ -40,6 +57,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("--------------------------------");
     println!("Images ingested:\t{album_size_pre_filter}");
     println!("Images to process:\t{album_size_post_filter}");
+
+    println!("--------------------------------");
+    let model_file = format!("../models/resnet_food_epoch_20.pt");
+
+    let model = Model::new(model_file, LABELS.iter().map(|&l| l.to_string()).collect());
+
+    let food_images_uuids = response_map
+        .iter()
+        .filter(|(_, asset)| {
+            let preds = model.predict_from_file(&asset.originalPath).expect(
+                &format!("Failed to process asset with path: {}", asset.originalPath).to_string(),
+            );
+            let preds_vec = Vec::<f64>::try_from(&preds).expect(
+                &format!(
+                    "Failed to convert tensor of dimensions {:?} to vector of type 'Vec<f64'!",
+                    preds.size()
+                )
+                .to_string(),
+            );
+            // We're keeping only images that has a probability of being food higher than 50%
+            preds_vec[0] < THRESHOLD
+        })
+        .map(|(_, asset)| asset.id.clone())
+        .collect::<Vec<String>>();
 
     Ok(())
 }
